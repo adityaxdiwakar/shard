@@ -7,7 +7,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CPP_FILES 
     src/main.cc)
 
-set(HEADER_FILES)
+set(HEADER_FILES
+    include/session.hpp
+    include/server.hpp)
 
 find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})

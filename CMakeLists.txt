@@ -5,7 +5,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CPP_FILES 
-    src/main.cc)
+    src/main.cc
+    src/session.cc
+    src/server.cc)
 
 set(HEADER_FILES
     include/session.hpp

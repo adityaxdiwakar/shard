@@ -3,7 +3,7 @@
 Shard is an exchange + market participant suite of systems to interact and test
 various ideas against random or adverse counterparties.
 
-## Connecting to Shard-Exch
+## Connecting to shard-exch
 ```
 $ nc localhost 20000
 AUTH participant password

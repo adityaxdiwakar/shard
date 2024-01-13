@@ -75,8 +75,7 @@ bool Session::handle_packet(const std::vector<char>& data, std::size_t length) {
         getline(ss, username, ' ');
         getline(ss, password);
 
-        std::cout << "User: " << username << std::endl;
-        std::cout << "Pass: " << password << std::endl;
+        std::cout << "Welcomed user " << username << " to shard-exch." << std::endl;
         
         if (username == "" || password == "") {
             send_message("Provide username and password to authenticate.");

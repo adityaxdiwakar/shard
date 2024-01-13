@@ -1,44 +1,45 @@
 #include "session.hpp"
 #include <iostream>
+#include <optional>
 
-Session::Session(tcp::socket socket)
-    : socket_(std::move(socket))
+Session::Session(tcp::socket socket, Server& parent)
+    : parent_(parent)
+    , socket_(std::move(socket))
     , data_(1024)
-    , authd_(false)
+    , user_(std::nullopt)
 {}
 
-void Session::readPacket() {
+void Session::read_packet() {
     auto self(shared_from_this());
     socket_.async_read_some(boost::asio::buffer(data_),
         [this, self](boost::system::error_code ec, std::size_t length) {
             if (!ec) {
-                if (handlePacket(data_, length))
-                    readPacket(); // loop to next packet, async
-                else closeSocket();
-            } else if (ec == boost::asio::error::eof) {
-                std::cout << "Disconnection from client" << std::endl;
-            } else {
-                std::cerr << "Read error: " << ec.message() << std::endl;
+                if (handle_packet(data_, length)) 
+                    read_packet(); // loop to next packet, async
+                else close_socket();
+            } else { // error occurred, will end session
+                // below is only logging
+                if (ec == boost::asio::error::eof) {
+                    std::cout << "Disconnection from client" << std::endl;
+                } else {
+                    std::cerr << "Read error: " << ec.message() << std::endl;
+                }
             }
         }
     );
 }
 
-void Session::closeSocket() {
+void Session::close_socket() {
+    if (user_.has_value())
+        parent_.rm_session(user_.value());
+
     std::cout << "Closing socket..." << std::endl;
     boost::system::error_code ec;
     socket_.shutdown(tcp::socket::shutdown_both, ec);
-    if (ec) {
-        std::cerr << "Shutdown error: " << ec.message() << std::endl;
-    }
-
     socket_.close(ec);
-    if (ec) {
-        std::cerr << "Close error: " << ec.message() << std::endl;
-    }
 }
 
-void Session::sendMessage(const std::string& msg) {
+void Session::send_message(const std::string& msg) {
     auto self(shared_from_this());
     write_buffer_ = "System: " + msg + "\n";
 
@@ -47,19 +48,26 @@ void Session::sendMessage(const std::string& msg) {
             if (ec) {
                 std::cerr << "Error sending message: " << ec.message() << std::endl;
                 std::cerr << "Errored content: " << write_buffer_ << std::endl;
-            }
+            } // else message sent successfully
         }
     );
 }
 
-bool Session::handlePacket(const std::vector<char>& data, std::size_t length) {
+bool Session::handle_packet(const std::vector<char>& data, std::size_t length) {
     std::string command;
     std::stringstream ss(std::string(data.begin(), data.end()));
     getline(ss, command, ' ');
 
+    // guard check: any command other than AUTH is invalid
+    if (!user_.has_value() && command != "AUTH") {
+        send_message("Failed to authenticate.");
+        return false;
+    }
+
     if (command == "AUTH") {
-        if (authd_) {
-            sendMessage("Reconnect to change session account.");
+        // guard check: cannot AUTH an already authenticated session
+        if (user_.has_value()) {
+            send_message("Reconnect to change session account.");
             return false;
         }
 
@@ -71,21 +79,28 @@ bool Session::handlePacket(const std::vector<char>& data, std::size_t length) {
         std::cout << "Pass: " << password << std::endl;
         
         if (username == "" || password == "") {
-            sendMessage("Provide username and password to authenticate.");
+            send_message("Provide username and password to authenticate.");
             return false;
         }
 
-        sendMessage("Welcome to shard, " + username + ".");
-        authd_ = true;
+        // TODO: validate this user/pass using authorizer
 
-        // TODO: validate this user/pass
+        user_ = username;
+        parent_.add_session(username, this);
+        send_message("Welcome to shard, " + username + ".");
+
+        return true;
+    }
+
+    if (command == "LMT") { // limit orders
+    } else if (command == "MKT") { // market orders
     } else {
-        if (!authd_) {
-            sendMessage("Unknown command, disconnecting.");
+        if (!user_.has_value()) {
+            send_message("Unknown command, disconnecting.");
             return false;
         } 
 
-        sendMessage("Unknown command.");
+        send_message("Unknown command.");
     }
 
     return true;

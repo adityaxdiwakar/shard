@@ -2,6 +2,7 @@
 
 #include "server.hpp"
 #include <boost/asio.hpp>
+#include <optional>
 
 using boost::asio::ip::tcp;
 

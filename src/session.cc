@@ -21,7 +21,6 @@ void Server::accept() {
     );
 }
 
-//void Server::add_session(std::string username, std::shared_ptr<Session> session) {
 void Server::add_session(std::string username, Session* session) {
     std::lock_guard<std::mutex> lock(lock_);
     sessions_[username] = session;

@@ -75,9 +75,6 @@ using LevelBook = std::set<std::shared_ptr<Level>, Level::Cmp>;
 class Book { 
     Order::Direction dir; // 2 books will exist, bid and ask book
 
-    // TODO: add book logic
-
-    // TODO: what cases will add_order fail? do we need bool ret type?
     void add_order(std::shared_ptr<Order> order);
 
     private:

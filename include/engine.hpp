@@ -52,12 +52,12 @@ struct Level {
     void add_order(std::shared_ptr<Order> order);
 
     struct Cmp {
-        bool cmp_ref(const Level& a, const Level& b) {
+        bool cmp_ref(const Level& a, const Level& b) const {
             if (a.dir == Order::BUY) return a.price < b.price;
             else return a.price > b.price;
         }
 
-        bool operator()(const std::shared_ptr<Level>& a, const std::shared_ptr<Level>& b) {
+        bool operator()(const std::shared_ptr<Level>& a, const std::shared_ptr<Level>& b) const {
             return cmp_ref(*a, *b);
         }
     };

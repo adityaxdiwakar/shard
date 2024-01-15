@@ -7,10 +7,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CPP_FILES 
     src/main.cc
     src/session.cc
+    src/engine.cc
     src/server.cc)
 
 set(HEADER_FILES
     include/session.hpp
+    include/engine.hpp
     include/server.hpp)
 
 find_package(Boost REQUIRED)

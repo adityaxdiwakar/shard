@@ -54,9 +54,12 @@ void Session::send_message(const std::string& msg) {
 }
 
 bool Session::handle_packet(const std::vector<char>& data, std::size_t length) {
+    std::string line;
+    getline(std::stringstream(std::string(data.begin(), data.end())), line);
+    std::stringstream ss(line);
+
     std::string command;
-    std::stringstream ss(std::string(data.begin(), data.end()));
-    getline(ss, command, ' ');
+    ss >> command;
 
     // guard check: any command other than AUTH is invalid
     if (!user_.has_value() && command != "AUTH") {
@@ -72,15 +75,16 @@ bool Session::handle_packet(const std::vector<char>& data, std::size_t length) {
         }
 
         std::string username, password;
-        getline(ss, username, ' ');
-        getline(ss, password);
 
-        std::cout << "Welcomed user " << username << " to shard-exch." << std::endl;
-        
-        if (username == "" || password == "") {
+        bool user_res = static_cast<bool>(ss >> username);
+        bool pass_res = static_cast<bool>(ss >> password);
+
+        if (!user_res || !pass_res) {
             send_message("Provide username and password to authenticate.");
             return false;
         }
+
+        std::cout << "Welcomed user " << username << " to shard-exch." << std::endl;
 
         // TODO: validate this user/pass using authorizer
 
@@ -93,6 +97,9 @@ bool Session::handle_packet(const std::vector<char>& data, std::size_t length) {
 
     if (command == "LMT") { // limit orders
     } else if (command == "MKT") { // market orders
+    } else if (command == "LOGOUT") {
+        send_message("Bye bye.");
+        return false;
     } else {
         if (!user_.has_value()) {
             send_message("Unknown command, disconnecting.");

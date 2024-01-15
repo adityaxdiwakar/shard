@@ -61,10 +61,20 @@ struct Level {
     };
 };
 
-
 template<Direction dir>
 class Book { 
-    void add_order(std::shared_ptr<Order<dir>> order);
+
+    public:
+        void add_order(std::shared_ptr<Order<dir>> order);
+        void rm_level(std::shared_ptr<Level<dir>> level) {
+            levels.erase(level);
+            level_map.erase(level->price);
+        }
+
+        std::shared_ptr<Level<dir>> top() {
+            if (levels.empty()) return nullptr;
+            return *levels.begin();
+        }
 
     private:
         using LevelBook = std::set<std::shared_ptr<Level<dir>>, typename Level<dir>::Cmp>;
@@ -81,4 +91,22 @@ class Book {
 class MatchingEngine {
     Book<Direction::BUY> bidBook;
     Book<Direction::SELL> askBook;
+
+    template<Direction dir>
+    Book<dir>& get_side() {
+        if constexpr (dir == Direction::BUY) return bidBook;
+        else return askBook;
+    }
+
+    private:
+        template <Direction dir, Direction opposing>
+        void process_(std::shared_ptr<Order<dir>> order);
+
+    public:
+        template <Direction dir>
+        void process(std::shared_ptr<Order<dir>> order) {
+            if constexpr (dir == Direction::BUY)
+                process_<dir, Direction::SELL>(order);
+            else return process_<dir, Direction::BUY>(order);
+        }
 };

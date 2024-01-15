@@ -10,10 +10,59 @@ template<Direction dir>
 void Book<dir>::add_order(std::shared_ptr<Order<dir>> order) {
     // if not in level map, insert into level map and levels book set
     if (level_map.find(order->price) == level_map.end()) {
-        std::shared_ptr<Level<dir>> new_level = make_shared<Level>(order);
+        std::shared_ptr<Level<dir>> new_level = make_shared<Level<dir>>(order);
         level_map[order->price] = new_level;
         levels.insert(new_level);
     }
 
     level_map[order->price]->add_order(order);
 }
+
+template<Direction dir>
+bool fillable_against(std::shared_ptr<Order<dir>> order, uint32_t price) {
+    if constexpr (dir == Direction::BUY) return order->price >= price;
+    else return order->price <= price;
+}
+
+template <Direction dir, Direction opposing>
+void MatchingEngine::process_(std::shared_ptr<Order<dir>> order) {
+    // check opposite book to see if order is more aggressive than top
+    std::shared_ptr<Level<opposing>> top = get_side<opposing>().top();
+
+    // less aggressive than top of other book, add to dir book
+    if (!top 
+        || top->orders.empty() 
+        || !fillable_against(order, top->orders.front()->price)) {
+        get_side<dir>().add_order(order);
+
+        // TODO: advertise order added, no fill (tell server)
+
+        return;
+    }
+
+    // aggressive order, fill against other book
+    while (true) { // TODO loop condition
+        auto top_order = top->orders.front();
+        if (top_order->size > order->size) {
+            top_order->size -= order->size;
+            // TODO: announce fills for both parties (top.participant and order.participant)
+            // announce OUT
+            break;
+        } 
+
+        // order clears the top order
+        order->size -= top_order->size;
+        top->orders.pop(); // consumed top order
+        // announce top order participant is OUT
+        if (top->orders.empty()) {
+            // top is empty, remove this level
+            get_side<opposing>().rm_level(top);
+
+            // consumed level, proceed to checking next level
+            process(order);
+        }
+    }
+}
+
+template void MatchingEngine::process_<Direction::BUY, Direction::SELL>(std::shared_ptr<Order<Direction::BUY>> order);
+template void MatchingEngine::process_<Direction::SELL, Direction::BUY>(std::shared_ptr<Order<Direction::SELL>> order);

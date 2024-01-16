@@ -12,16 +12,17 @@ struct Order {
 
     std::string participant; // TODO: use user order id, not strig
     std::string symbol; // TODO: use symbol id
-    uint32_t order_id;
+    uint32_t id;
     uint32_t price; // in number of pennies (or per underlying)
     uint32_t size;
     uint32_t ts;
 
     bool valid = true;
 
-    Order(std::string participant, std::string symbol, uint32_t price, uint32_t size)
+    Order(std::string participant, uint32_t order_id, std::string symbol, uint32_t price, uint32_t size)
         : participant(participant)
         , symbol(symbol)
+        , id(order_id)
         , price(price)
         , size(size)
     {}

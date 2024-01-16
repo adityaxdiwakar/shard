@@ -1,3 +1,4 @@
+#include <iostream>
 #include "engine.hpp"
 
 template<Direction dir>
@@ -47,20 +48,32 @@ void MatchingEngine::process_(std::shared_ptr<Order<dir>> order) {
             top_order->size -= order->size;
             // TODO: announce fills for both parties (top.participant and order.participant)
             // announce OUT
+            std::cout << "OUT " << order->id << std::endl;
+            std::cout << "FILL " << order-> id << std::endl;
+            std::cout << "FILL " << top_order->id << std::endl;
             break;
         } 
 
         // order clears the top order
         order->size -= top_order->size;
+        std::cout << "OUT " << top_order->id << std::endl;
+        std::cout << "FILL " << top_order->id << std::endl;
+        std::cout << "FILL " << order->id << std::endl;
         top->orders.pop(); // consumed top order
         // announce top order participant is OUT
+
         if (top->orders.empty()) {
             // top is empty, remove this level
             get_side<opposing>().rm_level(top);
 
-            // consumed level, proceed to checking next level
-            process(order);
+            if (order->size == 0) {
+                std::cout << "OUT " << order->id << std::endl;
+            } else {
+                process(order);
+            }
+            return;
         }
+
     }
 }
 

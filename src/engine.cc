@@ -29,6 +29,7 @@ template <Direction dir, Direction opposing>
 void MatchingEngine::process_(std::shared_ptr<Order<dir>> order) {
     // check opposite book to see if order is more aggressive than top
     std::shared_ptr<Level<opposing>> top = get_side<opposing>().top();
+    std::cout << "ACK " << order->id << std::endl;
 
     // less aggressive than top of other book, add to dir book
     if (!top 

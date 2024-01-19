@@ -99,15 +99,7 @@ class MatchingEngine {
         else return askBook;
     }
 
-    private:
-        template <Direction dir, Direction opposing>
-        void process_(std::shared_ptr<Order<dir>> order);
-
     public:
         template <Direction dir>
-        void process(std::shared_ptr<Order<dir>> order) {
-            if constexpr (dir == Direction::BUY)
-                process_<dir, Direction::SELL>(order);
-            else return process_<dir, Direction::BUY>(order);
-        }
+        void process(std::shared_ptr<Order<dir>> order);
 };

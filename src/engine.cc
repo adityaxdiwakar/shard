@@ -1,6 +1,22 @@
 #include <iostream>
 #include "engine.hpp"
 
+namespace {
+    // get type of opposite direction
+    template<Direction dir>
+    struct OpposingDir;
+
+    template<>
+    struct OpposingDir<Direction::BUY> {
+        static constexpr Direction value = Direction::SELL;
+    };
+
+    template<>
+    struct OpposingDir<Direction::SELL> {
+        static constexpr Direction value = Direction::BUY;
+    };
+}
+
 template<Direction dir>
 void Level<dir>::add_order(std::shared_ptr<Order<dir>> order) {
     orders.push(order);
@@ -25,10 +41,10 @@ bool fillable_against(std::shared_ptr<Order<dir>> order, uint32_t price) {
     else return order->price <= price;
 }
 
-template <Direction dir, Direction opposing>
-void MatchingEngine::process_(std::shared_ptr<Order<dir>> order) {
+template <Direction dir>
+void MatchingEngine::process(std::shared_ptr<Order<dir>> order) {
     // check opposite book to see if order is more aggressive than top
-    std::shared_ptr<Level<opposing>> top = get_side<opposing>().top();
+    auto top = get_side<OpposingDir<dir>::value>().top();
     std::cout << "ACK " << order->id << std::endl;
 
     // less aggressive than top of other book, add to dir book
@@ -65,7 +81,7 @@ void MatchingEngine::process_(std::shared_ptr<Order<dir>> order) {
 
         if (top->orders.empty()) {
             // top is empty, remove this level
-            get_side<opposing>().rm_level(top);
+            get_side<OpposingDir<dir>::value>().rm_level(top);
 
             if (order->size == 0) {
                 std::cout << "OUT " << order->id << std::endl;
@@ -78,5 +94,5 @@ void MatchingEngine::process_(std::shared_ptr<Order<dir>> order) {
     }
 }
 
-template void MatchingEngine::process_<Direction::BUY, Direction::SELL>(std::shared_ptr<Order<Direction::BUY>> order);
-template void MatchingEngine::process_<Direction::SELL, Direction::BUY>(std::shared_ptr<Order<Direction::SELL>> order);
+template void MatchingEngine::process(std::shared_ptr<Order<Direction::BUY>> order);
+template void MatchingEngine::process(std::shared_ptr<Order<Direction::SELL>> order);
